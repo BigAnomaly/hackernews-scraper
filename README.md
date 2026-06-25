@@ -1,134 +1,110 @@
-[Hackernews Scraper](https://apify.com/legend006/hackernews-scraper?fpr=data)
+[Hackernews Scraper](https://apify.com/makework36/hackernews-scraper?fpr=data)
 
-# 🟠 Hacker News Scraper
+# Hacker News Scraper
 
-Scrape **Hacker News** stories, comments, polls, jobs, and Ask/Show HN posts. Search by keyword + date range, pull full HN lists (front page, new, best, ask, show, jobs), or fetch any user's complete activity.
+Scrapes stories, jobs, and comments from Hacker News using the official Firebase API. Supports all story categories with optional comment fetching and score filtering.
 
-> ⚡ Uses HN's official Algolia + Firebase APIs. No login, no rate-limit nightmares, no scraping HTML.
+## What data does it extract?
 
----
+| Field | Description |
+| --- | --- |
+| `id` | Hacker News item ID |
+| `title` | Story title |
+| `url` | External link (null for text-only posts like Ask HN) |
+| `score` | Number of upvotes |
+| `author` | Username of the submitter |
+| `time` | Unix timestamp |
+| `timeISO` | ISO 8601 formatted date |
+| `commentCount` | Total number of comments on the story |
+| `type` | Item type: `story`, `job`, or `poll` |
+| `text` | Body HTML for Ask HN, Show HN, and job posts |
+| `domain` | Domain extracted from the URL (e.g. `github.com`) |
+| `hnUrl` | Direct link to the HN discussion page |
+| `comments` | Array of top-level comments (when `includeComments` is enabled) |
 
-## ✨ What you can do
+## Use cases
 
-- 🔎 **Keyword search** with date range, tag filter, min-points threshold, and sort by relevance/date/points
-- 📋 **Pull any HN list** — top, new, best, Ask HN, Show HN, jobs
-- 👤 **Get any user's full activity** — stories AND comments, by username
-- 💬 **Optionally fetch full comment trees** — flattened with parent IDs (great for AI training)
+- **Tech trend tracking** -- Monitor which topics, tools, and companies are trending among developers.
+- **Content curation** -- Pull top stories for newsletters or aggregator sites.
+- **Sentiment analysis** -- Collect comments on specific topics to gauge developer opinion.
+- **Job board aggregation** -- Scrape HN job postings for a tech job feed.
+- **Competitive intelligence** -- Track when your company or product gets discussed on HN.
 
----
+## How to use
 
-## 🚀 Quick start
-
-1. Click **Try for free**
-2. Pick mode: `search`, `list`, or `user`
-3. Enter targets
-4. Click **Start**
-
----
-
-## 📥 Input examples
-
-### Search for "claude" stories from the last month with 50+ points
+Get the current top 30 stories:
 
 ```
 {
-    "mode": "search",
-    "searchQueries": ["claude"],
-    "tags": "story",
-    "sortBy": "points",
-    "since": "2026-04-01",
-    "minPoints": 50,
-    "maxItems": 500,
+    "storyType": "top",
+    "maxResults": 30
+}
+```
+
+Ask HN posts with at least 100 points, including comments:
+
+```
+{
+    "storyType": "ask",
+    "maxResults": 20,
+    "minScore": 100,
     "includeComments": true
 }
 ```
 
-### Pull current front page
+Latest job postings:
 
 ```
 {
-    "mode": "list",
-    "listType": "topstories",
-    "maxItems": 30,
-    "includeComments": true,
-    "maxCommentsPerStory": 50
+    "storyType": "job",
+    "maxResults": 50
 }
 ```
 
-### Get pg's recent activity
+## Input parameters
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `storyType` | string | `top` | Category to scrape: `top`, `new`, `best`, `ask`, `show`, `job` |
+| `maxResults` | integer | `50` | Number of stories to return (1-500) |
+| `includeComments` | boolean | `false` | Fetch top-level comments for each story. Increases run time. |
+| `minScore` | integer | — | Only return stories with at least this many points |
+
+## Output example
 
 ```
 {
-    "mode": "user",
-    "users": ["pg", "dang"],
-    "maxItems": 100
-}
-```
-
----
-
-## 📤 Output (per item)
-
-```
-{
+    "id": 39521347,
+    "title": "Show HN: I built a SQL playground that runs in the browser",
+    "url": "https://github.com/nicholasgasior/sql-playground",
+    "score": 287,
+    "author": "ngasior",
+    "time": 1711324800,
+    "timeISO": "2026-03-25T04:00:00.000Z",
+    "commentCount": 94,
     "type": "story",
-    "id": 12345678,
-    "title": "Show HN: A new way to scrape data",
     "text": null,
-    "author": "username",
-    "points": 234,
-    "numComments": 87,
-    "createdAt": "2026-04-15T12:34:56.000Z",
-    "url": "https://example.com/article",
-    "hnUrl": "https://news.ycombinator.com/item?id=12345678",
-    "tags": ["story", "front_page"],
-    "comments": [
-        {
-            "type": "comment",
-            "id": 12345679,
-            "text": "Great post!",
-            "author": "commenter",
-            "points": 12,
-            "createdAt": "2026-04-15T13:00:00.000Z",
-            "parentId": 12345678
-        }
-    ]
+    "domain": "github.com",
+    "hnUrl": "https://news.ycombinator.com/item?id=39521347"
 }
 ```
 
----
+## Performance & cost
 
-## 🎯 Use cases
+- Fetches items in parallel (10 concurrent requests) for fast execution.
+- 50 stories without comments: ~5 seconds. With comments: 30-60 seconds depending on discussion size.
+- Costs under $0.01 per run on the Apify platform for most configurations.
 
-| Who | Why |
-| --- | --- |
-| 🤖 AI / LLM teams | High-signal tech-discussion training data, filterable by topic and quality (points threshold) |
-| 📰 Tech journalists | Track what's trending in dev/startup community |
-| 🧑‍💻 Engineers | Dataset of "Show HN" launches, open-source releases, new tools |
-| 📊 VCs / scouts | Monitor early-stage signals across founders posting on HN |
-| 📈 SEO researchers | Track tech keywords surfacing in HN search trends |
+## FAQ
 
----
+**Why does enabling comments make it so much slower?**
+Each story's comments require individual API calls. A story with 200 comments means 200 extra HTTP requests. The actor only fetches top-level comments to keep it manageable.
 
-## ⚙️ Tech notes
+**What's the difference between "top" and "best"?**
+"Top" shows the current front page ranking. "Best" shows the highest-voted stories across a longer timeframe -- it's HN's all-time best, roughly.
 
-- Search uses HN's [Algolia API](https://hn.algolia.com/api) — fast, fielded, supports complex queries
-- Lists & item details use HN's [Firebase API](https://github.com/HackerNews/API) — official, real-time
-- No auth required, no API key needed, no rate-limit (within reason)
-- Comments are fetched recursively from Firebase for accuracy and full trees
+**Can I search for specific keywords?**
+Not directly. HN's Firebase API doesn't support full-text search. Use `storyType: "top"` or `"new"` and filter the results downstream.
 
----
-
-## ❓ FAQ
-
-**Will I get rate-limited?**
-HN is generous — the Algolia API is unmetered for reasonable use. Comment-tree scraping at large scale is slower because each item is a separate Firebase call.
-
-**Are deleted/dead items included?**
-No — they're filtered automatically.
-
-**Can I scrape historical data?**
-Yes. Use `since` and `until` in search mode to pull any historical date range. HN's archive goes back to 2007.
-
-**Schedule it?**
-Yes — set up an Apify Schedule for daily/hourly trend tracking.
+**Is there a rate limit?**
+The HN Firebase API is public with no strict rate limit, but the actor uses 10 concurrent requests with retries to be respectful.
