@@ -1,110 +1,181 @@
-[Hackernews Scraper](https://apify.com/makework36/hackernews-scraper?fpr=data)
+[Hackernews Scraper](https://apify.com/fresh_cliff/hackernews-scraper?fpr=data)
 
-# Hacker News Scraper
+# Hacker News Scraper for Apify
 
-Scrapes stories, jobs, and comments from Hacker News using the official Firebase API. Supports all story categories with optional comment fetching and score filtering.
+A production-ready Apify actor that scrapes stories from Hacker News front page using Playwright.
 
-## What data does it extract?
+## 🚀 Features
 
-| Field | Description |
-| --- | --- |
-| `id` | Hacker News item ID |
-| `title` | Story title |
-| `url` | External link (null for text-only posts like Ask HN) |
-| `score` | Number of upvotes |
-| `author` | Username of the submitter |
-| `time` | Unix timestamp |
-| `timeISO` | ISO 8601 formatted date |
-| `commentCount` | Total number of comments on the story |
-| `type` | Item type: `story`, `job`, or `poll` |
-| `text` | Body HTML for Ask HN, Show HN, and job posts |
-| `domain` | Domain extracted from the URL (e.g. `github.com`) |
-| `hnUrl` | Direct link to the HN discussion page |
-| `comments` | Array of top-level comments (when `includeComments` is enabled) |
+- Scrapes Hacker News front page stories
+- Extracts comprehensive story data:
 
-## Use cases
+- Title and URL
+- Points (upvotes)
+- Author username
+- Number of comments
+- Time posted
+- Story rank
+- Hacker News discussion URL
+- Configurable number of stories to scrape
+- Option to include/exclude job posts
+- Built with Playwright for reliable scraping
+- Production-ready for Apify platform
 
-- **Tech trend tracking** -- Monitor which topics, tools, and companies are trending among developers.
-- **Content curation** -- Pull top stories for newsletters or aggregator sites.
-- **Sentiment analysis** -- Collect comments on specific topics to gauge developer opinion.
-- **Job board aggregation** -- Scrape HN job postings for a tech job feed.
-- **Competitive intelligence** -- Track when your company or product gets discussed on HN.
-
-## How to use
-
-Get the current top 30 stories:
+## 📁 Project Structure
 
 ```
-{
-    "storyType": "top",
-    "maxResults": 30
-}
+hackernews-scraper/
+├── .actor/
+│   ├── actor.json              # Actor metadata and configuration
+│   └── dataset_schema.json     # Output data schema
+├── apify_actor.py              # Main actor entry point
+├── hackernews_scraper.py       # Core scraper implementation
+├── Dockerfile                  # Docker configuration for Apify
+├── requirements.txt            # Python dependencies
+├── INPUT_SCHEMA.json           # Input configuration schema
+└── README.md                   # This file
 ```
 
-Ask HN posts with at least 100 points, including comments:
+## 🔧 Local Testing
+
+### Prerequisites
+
+- Python 3.11+
+- pip
+
+### Installation
+
+1. Install dependencies:
 
 ```
-{
-    "storyType": "ask",
-    "maxResults": 20,
-    "minScore": 100,
-    "includeComments": true
-}
+$pip install -r requirements.txt
 ```
 
-Latest job postings:
+1. Install Playwright browsers:
 
 ```
-{
-    "storyType": "job",
-    "maxResults": 50
-}
+$playwright install chromium
 ```
 
-## Input parameters
+1. Test the scraper locally:
 
-| Parameter | Type | Default | Description |
+```
+$python hackernews_scraper.py
+```
+
+## 🌐 Deploy to Apify
+
+### Prerequisites
+
+1. [Create an Apify account](https://console.apify.com/sign-up)
+2. Install Apify CLI: `npm install -g apify-cli`
+3. Login: `apify login`
+
+### Deployment Steps
+
+1. **Navigate to project directory:**
+
+```
+$cd hackernews-scraper
+```
+
+1. **Deploy to Apify:**
+
+```
+$apify push
+```
+
+1. **Access your actor** at [Apify Console](https://console.apify.com/actors)
+
+### Running on Apify
+
+1. Navigate to your actor in the Apify Console
+2. Click "Run"
+3. Configure input options (optional)
+4. Click "Start" to run the actor
+5. View results in the "Dataset" tab
+
+## ⚙️ Input Configuration
+
+| Field | Type | Default | Description |
 | --- | --- | --- | --- |
-| `storyType` | string | `top` | Category to scrape: `top`, `new`, `best`, `ask`, `show`, `job` |
-| `maxResults` | integer | `50` | Number of stories to return (1-500) |
-| `includeComments` | boolean | `false` | Fetch top-level comments for each story. Increases run time. |
-| `minScore` | integer | — | Only return stories with at least this many points |
+| `maxStories` | integer | 30 | Maximum number of stories to scrape (1-100) |
+| `includeJobPosts` | boolean | false | Include "Who is hiring?" job posts |
 
-## Output example
+### Example Input
 
 ```
 {
-    "id": 39521347,
-    "title": "Show HN: I built a SQL playground that runs in the browser",
-    "url": "https://github.com/nicholasgasior/sql-playground",
-    "score": 287,
-    "author": "ngasior",
-    "time": 1711324800,
-    "timeISO": "2026-03-25T04:00:00.000Z",
-    "commentCount": 94,
-    "type": "story",
-    "text": null,
-    "domain": "github.com",
-    "hnUrl": "https://news.ycombinator.com/item?id=39521347"
+  "maxStories": 30,
+  "includeJobPosts": false
 }
 ```
 
-## Performance & cost
+## 📊 Output Format
 
-- Fetches items in parallel (10 concurrent requests) for fast execution.
-- 50 stories without comments: ~5 seconds. With comments: 30-60 seconds depending on discussion size.
-- Costs under $0.01 per run on the Apify platform for most configurations.
+Each story is returned as a JSON object with the following structure:
 
-## FAQ
+```
+{
+  "rank": 1,
+  "title": "Show HN: I built a tool for...",
+  "url": "https://example.com/article",
+  "points": 342,
+  "author": "username",
+  "comments": 127,
+  "timeAgo": "2024-01-15T10:30:00.000Z",
+  "hackerNewsUrl": "https://news.ycombinator.com/item?id=12345678"
+}
+```
 
-**Why does enabling comments make it so much slower?**
-Each story's comments require individual API calls. A story with 200 comments means 200 extra HTTP requests. The actor only fetches top-level comments to keep it manageable.
+### Output Fields
 
-**What's the difference between "top" and "best"?**
-"Top" shows the current front page ranking. "Best" shows the highest-voted stories across a longer timeframe -- it's HN's all-time best, roughly.
+| Field | Type | Description |
+| --- | --- | --- |
+| `rank` | number | Story position on front page |
+| `title` | string | Story title |
+| `url` | string | Link to the story/article |
+| `points` | number | Number of upvotes |
+| `author` | string | Username who posted the story |
+| `comments` | number | Number of comments |
+| `timeAgo` | string | Timestamp when story was posted |
+| `hackerNewsUrl` | string | URL to Hacker News discussion |
 
-**Can I search for specific keywords?**
-Not directly. HN's Firebase API doesn't support full-text search. Use `storyType: "top"` or `"new"` and filter the results downstream.
+## 🛠️ Built With
 
-**Is there a rate limit?**
-The HN Firebase API is public with no strict rate limit, but the actor uses 10 concurrent requests with retries to be respectful.
+- **Python 3.11** - Programming language
+- **Playwright** - Browser automation
+- **Apify SDK** - Actor framework
+- Following Apify best practices and patterns
+
+## 📝 Use Cases
+
+- Monitor trending tech stories
+- Track specific topics on HN
+- Build custom HN readers/aggregators
+- Research what content performs well
+- Create HN analytics dashboards
+
+## 🔒 Rate Limiting
+
+The scraper is designed to be respectful of Hacker News:
+
+- Single page load per run
+- No aggressive pagination
+- Configurable limits on stories scraped
+
+## 📄 License
+
+This actor is provided as-is for use on the Apify platform.
+
+## 🤝 Support
+
+For issues or questions:
+
+- Check the [Apify documentation](https://docs.apify.com)
+- Open an issue in the repository
+- Contact via Apify platform
+
+---
+
+**Ready to deploy in under 10 minutes! 🎉**
