@@ -1,86 +1,142 @@
-[Hackernews Scraper](https://apify.com/andok/hackernews-scraper?fpr=data)
+[Hackernews Scraper](https://apify.com/epctex/hackernews-scraper?fpr=data)
 
-# Hacker News Scraper & Tracker
+# Actor - Hacker News Scraper
 
-Track Hacker News discussions for competitive intelligence, developer sentiment, and trending topics in tech. Instead of scraping HTML, this actor queries the official HN Firebase API to pull stories by category — top, new, best, ask, show, or job — with scores, comment counts, and author data. Schedule it daily to build a signal feed for product launches, technology trends, and community buzz.
+## Hacker News scraper
 
-## Features
+Since Hacker News doesn't provide a good API, this actor should help you to retrieve data from it.
 
-- **Six categories** — fetch top, new, best, ask, show, or job stories in a single run
-- **Official API** — uses the Hacker News Firebase API for reliable, structured data
-- **Rich metadata** — includes score, comment count, author, timestamp, and source domain
-- **Domain extraction** — automatically parses the hostname from each story URL
-- **Bulk fetching** — retrieve up to 500 stories per run with batched API calls
-- **No browser required** — pure API access means fast execution and low resource usage
-- **Pay-per-result pricing** — only pay for stories extracted, with built-in charge limits
+The Hacker News data scraper supports the following features:
 
-## Input
+- Scrape front page listing - You can scrape the homepage listings with any page you want.
+- Scrape the newest listing - Latest news can be scraped right away from Hacker News.
+- Scrape historical data - If you are looking for historical data, you can pick any date you want and scrape it over.
+- Scrape listings of Ask HN - If you are specifically looking for an "Ask HN" type of listing, you can target it.
+- Scrape listings of Show HN - If you are specifically looking for a "Show HN" type of listing, you can target it.
+- Scrape listing details - You can scrape a single listing.
+- Scrape Hacker News Algolia - You can retrieve everything from Hacker News' Algolia website
+- Scrape job listings - You can scrape the latest job listings that are posted on Hacker News.
 
-| Field | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `category` | `string` | No | `top` | Story category to fetch: `top`, `new`, `best`, `ask`, `show`, or `job` |
-| `maxItems` | `integer` | No | `100` | Maximum number of stories to fetch (1-500) |
-| `timeoutSeconds` | `integer` | No | `15` | Per-request API timeout in seconds (1-120) |
+## Bugs, fixes, updates, and changelog
 
-### Input Example
+This scraper is under active development. If you have any feature requests you can create an issue from [here](https://github.com/epctex-support/hackernews-scraper/issues).
+
+## Input Parameters
+
+The input of this scraper should be JSON containing the list of pages on Hacker News that should be visited. Possible fields are:
+
+- `startUrls`: (Optional) (Array) List of Hacker News URLs. You should only provide a news list, jobs list, or detail URLs.
+- `mode`: (Optional) (String) Mode of the actor. Can be `FRONTPAGE`, `NEWEST`, `ASK`, `SHOW`, `JOBS` or `PAST`.
+- `enableCommentHierarchy`: (Optional) (Boolean) Enables comment hierarchy over the posts. It retrieves all the comments and builds a tree within the replies.
+- `endPage`: (Optional) (Number) Final number of page that you want to scrape. The default is `Infinite`. This applies to all `search` requests and `startUrls` individually.
+- `maxItems`: (Optional) (Number) You can limit scraped items. This should be useful when you search through the big lists or search results.
+- `proxy`: (Required) (Proxy Object) Proxy configuration.
+- `extendOutputFunction`: (Optional) (String) Function that takes a JQuery handle ($) as an argument and returns an object with data.
+
+This solution requires the use of **Proxy servers**, either your own proxy servers or you can use [Apify Proxy](https://www.apify.com/docs/proxy).
+
+### Tip
+
+When you want to scrape over a specific listing URL, just copy and paste the link as one of the **startUrl**.
+
+If you would like to scrape only the first page of a list then put the link for the page and have the `endPage` as 1.
+
+With the last approach that is explained above you can also fetch any interval of pages. If you provide the 5th page of a list and define the `endPage` parameter as 6 then you'll have the 5th and 6th pages only.
+
+If you would like to scrape historical data (ex: 2020-03-18) go to Hacker News, click on the "Past" tab, and find the URL that you are looking for. Then use the link as **startUrl**. Also; this is the format of historical data: `https://news.ycombinator.com/front?day=2020-03-18`
+
+### Compute Unit Consumption
+
+The actor is optimized to run blazing fast and scrape many listings as possible. Therefore, it forefronts all listing detail requests. If the actor doesn't block very often it'll scrape 100 listings in 1 minute with ~0.03-0.04 compute units.
+
+### Hacker News Scraper Input example
 
 ```
 {
-  "category": "top",
-  "maxItems": 50,
-  "timeoutSeconds": 15
+    "startUrls": [
+        {
+            "url": "https://news.ycombinator.com/item?id=26501527"
+        },
+        {
+            "url": "https://news.ycombinator.com/front?day=2020-03-18"
+        }
+    ],
+    "mode": "FRONTPAGE",
+    "enableCommentHierarchy": false,
+    "proxy": {
+        "useApifyProxy": true
+    },
+    "endPage": 1,
+    "maxItems": 100
 }
 ```
 
-## Output
+## During the Run
 
-Each dataset item represents one Hacker News story. Key fields:
+During the run, the actor will output messages letting you know what is going on. Each message always contains a short label specifying which page from the provided list is currently specified.
+When items are loaded from the page, you should see a message about this event with a loaded item count and total item count for each page.
 
-- `id` (`number`) — HN story ID
-- `title` (`string`) — story headline
-- `url` (`string`) — link to the external content (or HN discussion if self-post)
-- `domain` (`string`) — hostname of the linked URL (e.g. `github.com`)
-- `score` (`number`) — upvote count
-- `by` (`string`) — author username
-- `time` (`number`) — Unix timestamp of submission
-- `descendants` (`number`) — total comment count
-- `type` (`string`) — item type (`story`, `job`, etc.)
+If you provide incorrect input to the actor, it will immediately stop with a failure state and output an explanation of what is wrong.
 
-### Output Example
+## Hacker News Export
+
+During the run, the actor stores results into a dataset. Each item is a separate item in the dataset.
+
+You can manage the results in any language (Python, PHP, Node JS/NPM). See the FAQ or [our API reference](https://www.apify.com/docs/api) to learn more about getting results from this Hacker News actor.
+
+## Scraped Hacker News Properties
+
+The structure of each item in Hacker News listings looks like this:
+
+### Job Listings
 
 ```
 {
-  "id": 38945678,
-  "title": "Show HN: I built an open-source alternative to Datadog",
-  "url": "https://github.com/example/monitoring-tool",
-  "domain": "github.com",
-  "score": 342,
-  "by": "techfounder",
-  "time": 1705334400,
-  "descendants": 187,
-  "type": "story"
+    "id": "26437893",
+    "title": "Substack (YC W18) is hiring to build a better business model for writing",
+    "link": "https://substack.com/jobs",
+    "age": "7 days ago",
+    "scrapedAt": "2021-03-19T21:56:00.085Z"
 }
 ```
 
-## Pricing
+### Single Comment
 
-| Event | Cost |
-| --- | --- |
-| Post Extracted | Pay-per-event (see actor pricing page) |
+```
+{
+    "scrapedType": "comment",
+    "userName": "tsl54",
+    "userLink": "https://news.ycombinator.com/user?id=tsl54",
+    "age": "9 months ago",
+    "message": "Congratulations on getting here! I’ve been part of a few management changes from the board level.",
+    "comments":[]
+},
+```
 
-## Use Cases
+### News Listings
 
-- **Competitive intelligence** — monitor when competitors or their products get discussed on HN
-- **Developer sentiment** — track how the community reacts to new tools, frameworks, and launches
-- **Trend detection** — identify rising technologies by analyzing top and best story patterns over time
-- **Content research** — find high-engagement topics for technical blog posts or developer marketing
-- **Job market analysis** — scrape the monthly "Who is Hiring?" threads for hiring trends
-- **AI agent feeds** — supply structured HN data to LLM pipelines for tech news summarization
+```
+{
+    "id": "26501262",
+    "title": "Fancy Defines",
+    "link": "https://idiomdrottning.org/fancy-defines",
+    "points": 15,
+    "postedUserName": "todsacerdoti",
+    "postedUserLink": "https://news.ycombinator.com/user?id=todsacerdoti",
+    "numberOfComments": 1,
+    "comments": [
+        {
+            "userName": "nerdponx",
+            "userLink": "https://news.ycombinator.com/user?id=nerdponx",
+            "age": "2 hours ago",
+            "message": "Interesting, I didn't know about this at all. Is it that common in Scheme to write functions that immediately return other functions? Seems like an oddly \"blessed\" usage of syntax that IMO could be better used for something like pattern matching.Looking at this example from the linked SRFI [0]:    (define ((greet-with-prefix prefix) suffix)\n      (string-append prefix \" \" suffix))\n\n    (define greet (greet-with-prefix \"Hello\"))\n\n    (greet \"there!\") => \"Hello there!\"\n\nI'm not convinced that this is anything but an obfuscation, compared to the standard R5RS version:    (define (greet-with-prefix suffix)\n      (lambda (prefix)\n        (string-append prefix \" \" suffix)))\n\n    (define greet (greet-with-prefix \"Hello\"))\n\n    (greet \"there!\") => \"Hello there!\"\n\nWhat do the experienced Schemers think?[0]: https://srfi.schemers.org/srfi-219/srfi-219.html"
+        }
+    ],
+    "age": "4 hours ago",
+    "scrapedAt": "2021-03-19T21:37:45.462Z"
+}
+```
 
-## Related Actors
+## Contact
 
-| Actor | What it adds |
-| --- | --- |
-| [Google News Scraper](https://apify.com/andok/google-news-scraper) | Broaden coverage beyond HN to mainstream news outlets |
-| [RSS & Atom Feed Parser](https://apify.com/andok/rss-parser) | Parse the HN RSS feed or any other RSS source for simpler use cases |
-| [Reddit Scraper](https://apify.com/andok/reddit-json-scraper) | Track discussions on Reddit for a complementary community signal |
+Please visit us through [epctex.com](https://epctex.com) to see all the products that are available for you. If you are looking for any custom integration or so, please reach out to us through the chat box in [epctex.com](https://epctex.com). In need of support? [business@epctex.com](mailto:business@epctex.com) is at your service.
